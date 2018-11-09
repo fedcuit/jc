@@ -36,4 +36,14 @@ public class AtomicFieldUpdaterTest {
         System.out.println(results);
         assertEquals(results.get(0), results.get(1));
     }
+
+    @Test
+    public void testWithAtomicInteger() throws InterruptedException {
+        AtomicFieldUpdater atomicFieldUpdater = new AtomicFieldUpdater();
+
+        List<Integer> results = atomicFieldUpdater.runWithAtomicInteger();
+
+        System.out.println(results);
+        assertEquals(results.get(0), results.get(1));
+    }
 }
