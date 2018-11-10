@@ -4,7 +4,7 @@ import com.google.common.util.concurrent.*;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -86,27 +86,27 @@ class AtomicFieldUpdater {
         }
     }
 
-    List<Integer> runWithIntrinsicLock() throws InterruptedException {
+    List<Integer> runWithIntrinsicLock() {
         Candidate candidate = new Candidate();
 
         Object lock = new Object();
         AtomicInteger score = new AtomicInteger();
-        CountDownLatch countDownLatch = new CountDownLatch(1);
 
-        List<? extends ListenableFuture<?>> futures = IntStream
+        List<CompletableFuture<Object>> futures = IntStream
                 .range(0, TIMES)
-                .mapToObj(i -> es.submit(() -> {
+                .mapToObj(i -> CompletableFuture.supplyAsync(() -> {
                     if (Math.random() < 0.4) {
                         synchronized (lock) {
                             candidate.score++;
                         }
                         score.incrementAndGet();
                     }
-                })).collect(Collectors.toList());
+                    return null;
+                }, es)).collect(Collectors.toList());
 
-        Futures.whenAllComplete(futures).run(countDownLatch::countDown, es);
-        countDownLatch.await();
 
+        CompletableFuture<Void> allOf = CompletableFuture.allOf(futures.toArray(new CompletableFuture[]{}));
+        allOf.join();
         return Arrays.asList(candidate.score, score.get());
     }
 
