@@ -1,13 +1,11 @@
 package io.fedcuit.github;
 
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.*;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -24,11 +22,11 @@ class AtomicFieldUpdater {
         volatile int score;
     }
 
-    List<Integer> runWithAtomicFieldUpdater() throws InterruptedException {
+    List<Integer> runWithAtomicFieldUpdater() throws InterruptedException, ExecutionException {
         Candidate candidate = new Candidate();
 
         AtomicInteger score = new AtomicInteger();
-        CountDownLatch countDownLatch = new CountDownLatch(1);
+        SettableFuture<Object> settableFuture = SettableFuture.create();
         AtomicIntegerFieldUpdater<Candidate> fieldUpdater = AtomicIntegerFieldUpdater.newUpdater(Candidate.class, "score");
 
         List<? extends ListenableFuture<?>> futures = IntStream
@@ -42,9 +40,10 @@ class AtomicFieldUpdater {
                     }
                 })).collect(Collectors.toList());
 
-        Futures.whenAllComplete(futures).run(countDownLatch::countDown, es);
+        Futures.whenAllComplete(futures).run(() -> settableFuture.set(null), es);
 
-        countDownLatch.await();
+        settableFuture.get();
+
         return Arrays.asList(candidate.score, score.get());
     }
 

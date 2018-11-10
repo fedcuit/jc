@@ -3,6 +3,7 @@ package io.fedcuit.github;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -28,7 +29,7 @@ public class AtomicFieldUpdaterTest {
     }
 
     @Test
-    public void testWithAtomicFieldUpdater() throws InterruptedException {
+    public void testWithAtomicFieldUpdater() throws InterruptedException, ExecutionException {
         AtomicFieldUpdater atomicFieldUpdater = new AtomicFieldUpdater();
 
         List<Integer> results = atomicFieldUpdater.runWithAtomicFieldUpdater();
