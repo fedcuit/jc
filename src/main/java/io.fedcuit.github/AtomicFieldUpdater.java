@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.ReentrantLock;
@@ -112,7 +113,8 @@ class AtomicFieldUpdater {
     List<Integer> runWithAtomicInteger() throws InterruptedException {
         AtomicInteger score = new AtomicInteger();
         AnotherCandidate anotherCandidate = new AnotherCandidate();
-        CountDownLatch countDownLatch = new CountDownLatch(1);
+        Semaphore semaphore = new Semaphore(1);
+        semaphore.acquire();
 
         List<? extends ListenableFuture<?>> futures = IntStream
                 .range(0, TIMES)
@@ -123,9 +125,9 @@ class AtomicFieldUpdater {
                     }
                 })).collect(Collectors.toList());
 
-        Futures.whenAllComplete(futures).run(countDownLatch::countDown, es);
-        countDownLatch.await();
+        Futures.whenAllComplete(futures).run(semaphore::release, es);
 
+        semaphore.acquire();
         return Arrays.asList(anotherCandidate.score.get(), score.get());
     }
 
