@@ -52,7 +52,7 @@ class AtomicFieldUpdater {
 
         ReentrantLock lock = new ReentrantLock();
         AtomicInteger score = new AtomicInteger();
-        CountDownLatch countDownLatch = new CountDownLatch(1);
+        Object sentinel = new Object();
 
         List<? extends ListenableFuture<?>> futures = IntStream
                 .range(0, TIMES)
@@ -68,9 +68,21 @@ class AtomicFieldUpdater {
                     }
                 })).collect(Collectors.toList());
 
-        Futures.whenAllComplete(futures).run(countDownLatch::countDown, es);
-        countDownLatch.await();
-        return Arrays.asList(candidate.score, score.get());
+        Futures.whenAllComplete(futures).run(() -> {
+            // Hold the monitor of sentinel object before call notify()
+            synchronized (sentinel) {
+                sentinel.notify();
+            }
+        }, es);
+
+        // Hold the monitor of sentinel object before call wait()
+        synchronized (sentinel) {
+            // await in a loop with condition check to prevent spurious wakeup
+            while (futures.size() != TIMES) {
+                sentinel.wait();
+            }
+            return Arrays.asList(candidate.score, score.get());
+        }
     }
 
     List<Integer> runWithIntrinsicLock() throws InterruptedException {
