@@ -1,6 +1,11 @@
 package io.fedcuit.github.futurePattern;
 
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
 public class FutureData implements Data<String> {
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition valueIsSet = lock.newCondition();
     private String value;
     private boolean isSet = false;
 
@@ -13,7 +18,7 @@ public class FutureData implements Data<String> {
 
         // update flag and notify all waiting threads
         this.isSet = true;
-        this.notifyAll();
+        valueIsSet.notifyAll();
     }
 
     @Override
@@ -21,7 +26,7 @@ public class FutureData implements Data<String> {
         while (!isSet) {
             try {
                 // block waiting if result is not set
-                this.wait();
+                valueIsSet.await();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
