@@ -13,13 +13,14 @@ private class HandleMsg(val clientSocket: Socket) : Runnable {
         clientSocket.use { clientSocket ->
             BufferedReader(InputStreamReader(clientSocket.getInputStream())).useLines { lines ->
                 PrintWriter(clientSocket.getOutputStream(), true).use { printWriter ->
-                    lines.forEach { printWriter.println(it) }
+                    lines.forEach {
+                        println("Client says: $it")
+                        printWriter.println(it)
+                    }
                     val end = System.currentTimeMillis()
-                    println("Send ${end - begin}ms")
+                    println("Spend ${end - begin}ms")
                 }
-
             }
-
         }
     }
 }
