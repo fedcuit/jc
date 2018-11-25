@@ -5,11 +5,13 @@ import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.locks.LockSupport
 
-class SlowClient(private val msg: String) : Runnable {
+class SlowClient(private val msg: String, private val countDownLatch: CountDownLatch) : Runnable {
     override fun run() {
+        val begin = System.currentTimeMillis()
         val client = Socket()
         client.connect(InetSocketAddress(8000))
         client.use { socket ->
@@ -26,6 +28,8 @@ class SlowClient(private val msg: String) : Runnable {
                 }
             }
         }
+        println("Thread ${Thread.currentThread().name} is occupied for ${System.currentTimeMillis() - begin}ms")
+        countDownLatch.countDown()
     }
 
     companion object {
@@ -34,9 +38,13 @@ class SlowClient(private val msg: String) : Runnable {
 }
 
 fun main(args: Array<String>) {
+    val n = 5
     val tp = Executors.newCachedThreadPool()
+    val countDownLatch = CountDownLatch(n)
 
-    for (i in 1..5) {
-        tp.submit(SlowClient("Hello"))
+    for (i in 1..n) {
+        tp.submit(SlowClient("Hello", countDownLatch))
     }
+    countDownLatch.await()
+    tp.shutdownNow()
 }
