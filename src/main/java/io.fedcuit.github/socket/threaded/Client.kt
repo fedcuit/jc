@@ -15,10 +15,9 @@ fun main(args: Array<String>) {
             println("Send to Server: $s")
             writer.println(s)
 
-            BufferedReader(InputStreamReader(socket.getInputStream())).useLines { lines ->
-                lines.forEach { println("Echo from server: $it") }
+            BufferedReader(InputStreamReader(socket.getInputStream())).use { reader ->
+                println("Echo from server: ${reader.readLine()}")
             }
-
         }
     }
 }

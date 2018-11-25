@@ -17,10 +17,10 @@ private class HandleMsg(val clientSocket: Socket) : Runnable {
                         println("Client says: $it")
                         printWriter.println(it)
                     }
-                    val end = System.currentTimeMillis()
-                    println("Spend ${end - begin}ms")
                 }
             }
+            val end = System.currentTimeMillis()
+            println("Spend ${end - begin}ms")
         }
     }
 }

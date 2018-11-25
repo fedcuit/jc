@@ -8,20 +8,21 @@ import java.net.Socket
 import java.util.concurrent.Executors
 import java.util.concurrent.locks.LockSupport
 
-class SlowClient : Runnable {
+class SlowClient(private val msg: String) : Runnable {
     override fun run() {
         val client = Socket()
         client.connect(InetSocketAddress(8000))
         client.use { socket ->
             PrintWriter(socket.getOutputStream(), true).use { writer ->
-                "Hello".forEach {
+                msg.forEach {
                     writer.print(it)
                     println("Send to Server: $it")
                     LockSupport.parkNanos(sleepTime)
                 }
                 writer.println()
-                BufferedReader(InputStreamReader(socket.getInputStream())).useLines { lines ->
-                    lines.forEach { println("From Server: $it") }
+
+                BufferedReader(InputStreamReader(socket.getInputStream())).use { reader ->
+                    println("Echo from server: ${reader.readLine()}")
                 }
             }
         }
@@ -36,6 +37,6 @@ fun main(args: Array<String>) {
     val tp = Executors.newCachedThreadPool()
 
     for (i in 1..5) {
-        tp.submit(SlowClient())
+        tp.submit(SlowClient("Hello"))
     }
 }
