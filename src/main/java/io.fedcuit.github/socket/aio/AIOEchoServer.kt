@@ -1,5 +1,6 @@
 package io.fedcuit.github.socket.aio
 
+import io.fedcuit.github.socket.completify
 import java.lang.Thread.sleep
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -37,35 +38,9 @@ private fun handleConnection(asyncServer: AsynchronousServerSocketChannel) {
         }
     })
 
-    val readFinished = CompletableFuture<ByteBuffer>()
-    socketAccepted.thenComposeAsync { asyncSocket ->
+    socketAccepted.thenComposeAsync { socket ->
         val bb = ByteBuffer.allocate(1024)
-
-        asyncSocket.read(bb, null, object : CompletionHandler<Int, Nothing?> {
-            override fun completed(result: Int, attachment: Nothing?) {
-                bb.flip()
-                readFinished.complete(bb)
-            }
-
-            override fun failed(exc: Throwable?, attachment: Nothing?) {
-                readFinished.completeExceptionally(exc)
-            }
-        })
-        readFinished
-    }
-
-    val writeFinished = CompletableFuture<Int>()
-    readFinished.thenComposeAsync { byteBuffer ->
-        val socket = socketAccepted.get()
-        socket.write(byteBuffer, null, object : CompletionHandler<Int, Nothing?> {
-            override fun completed(result: Int?, attachment: Nothing?) {
-                writeFinished.complete(result)
-            }
-
-            override fun failed(exc: Throwable?, attachment: Nothing?) {
-                writeFinished.completeExceptionally(exc)
-            }
-        })
-        writeFinished
+        completify(socket, "read", bb, 0)
+                .thenComposeAsync { completify(socket, "write", bb.flip(), 0) }
     }
 }
