@@ -1,6 +1,7 @@
 package io.fedcuit.github.socket.aio
 
-import io.fedcuit.github.socket.completify
+import io.fedcuit.github.socket.readAsync
+import io.fedcuit.github.socket.writeAsync
 import java.lang.Thread.sleep
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -40,7 +41,7 @@ private fun handleConnection(asyncServer: AsynchronousServerSocketChannel) {
 
     socketAccepted.thenComposeAsync { socket ->
         val bb = ByteBuffer.allocate(1024)
-        completify(socket, "read", bb, 0)
-                .thenComposeAsync { completify(socket, "write", bb.flip(), 0) }
+        socket.readAsync(bb, 0)
+                .thenComposeAsync { socket.writeAsync(bb.flip() as ByteBuffer, 0) }
     }
 }
