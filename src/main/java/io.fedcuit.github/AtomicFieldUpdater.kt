@@ -16,6 +16,7 @@ import java.util.function.Supplier
 
 class Candidate {
     @Volatile
+    @JvmField
     var score = 0
 }
 
@@ -30,6 +31,8 @@ class AtomicFieldUpdater {
         val score = AtomicInteger()
         val settableFuture: SettableFuture<Int> = SettableFuture.create()
         // seems like something wrong with reflection in kotlin
+        // fixed @JvmField makes the Kotlin-compiler expose the property as a field on the JVM.
+        // See here: https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.jvm/-jvm-field/
         val fieldUpdater = AtomicIntegerFieldUpdater.newUpdater(candidate.javaClass, "score")
 
         val futures = (1..times).map { i ->
